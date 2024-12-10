@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Rutas</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="static/css/styles.css">
+
+    <!-- Incluir el script de la API de Google Maps -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCLmiDYA0_zsddUC4WrxDsCnauhfwdzuXM&libraries=places"></script>
+</head>
+<body>
+
+    <!-- Sección de controles para ingresar origen y destino -->
+    <div id="controls">
+        <label for="origen">Origen:</label>
+        <input id="origen" type="text" placeholder="Introduce el origen">
+        
+        <label for="destino">Destino:</label>
+        <input id="destino" type="text" placeholder="Introduce el destino">
+        
+        <button onclick="calcularRuta()">Calcular Ruta</button>
+        <button onclick="usarUbicacionActual()">Usar mi ubicación actual</button>
+    </div>
+
+    <!-- Menú lateral con enlaces -->
+    <div id="menu">
+        <img src="{{ url_for('static', filename='images/menu.png') }}" alt="Menú" class="menu-icon">
+        <div id="menu-content">
+            <a href="/ingresoUsuarios">Ingreso Usuario</a>
+            <a href="/registro">Registrar Usuarios</a>
+        </div>
+    </div>
+
+    <!-- Mapa donde se visualizarán las rutas -->
+    <div id="map"></div>
+
+    <script src="static/js/App.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+
+        const map = L.map('map').setView([4.6097100, -74.0817500], 13);
+
+        L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '&copy; <a href="https://www.google.com/intl/es_es/help/terms_maps.html">Google</a>'
+        }).addTo(map);
+
+        // Variables para el uso de la API de Google Maps
+        let googleMap;
+        let directionsService;
+        let directionsRenderer;
+
+        function initMap() {
+            // Cambiar centro del mapa a Sogamoso
+            googleMap = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 5.7209, lng: -72.9292 }, // Coordenadas de Sogamoso
+                zoom: 14 // Aumentar el zoom
+            });
+
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer();
+            directionsRenderer.setMap(googleMap);
+        }
+
+        function usarUbicacionActual() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    let lat = position.coords.latitude;
+                    let lon = position.coords.longitude;
+                    document.getElementById('origen').value = lat + ', ' + lon;
+                });
+            } else {
+                alert("La geolocalización no está disponible en este navegador.");
+            }
+        }
+
+        function calcularRuta() {
+            const origen = document.getElementById('origen').value;
+            const destino = document.getElementById('destino').value;
+
+            if (!origen || !destino) {
+                alert("Por favor, ingresa el origen y destino.");
+                return;
+            }
+
+            const request = {
+                origin: origen,
+                destination: destino,
+                travelMode: google.maps.TravelMode.DRIVING
+            };
+
+            directionsService.route(request, function(result, status) {
+                if (status === 'OK') {
+                    directionsRenderer.setDirections(result);
+                } else {
+                    console.error('Error al obtener la ruta:', status);
+                    alert('No se pudo generar la ruta. Inténtalo de nuevo.');
+                }
+            });
+        }
+
+        window.onload = initMap;
+    </script>
+</body>
+</html>
